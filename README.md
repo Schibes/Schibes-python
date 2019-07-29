@@ -1,6 +1,8 @@
 # Schibes-challenge
 
-An AWS CloudFormation template that builds a secure, scalable, load balanced demo website in the AWS us-west-2 (Oregon) region. The demo website uses HTTPS only via a certificate generated inside Amazon Certificate Manager (ACM). Validations are done constantly throughout stack creation via automated tests run by CloudFormation as well as health checks implemented on the application load balancer.
+This GitHub repo contains an AWS CloudFormation template that builds a secure, scalable, load balanced demo website in the AWS us-west-2 (Oregon) region. It also contains a very small "Hello World" static HTML page that can be replaced with the website code of your choice. The web servers run NGINX on Ubuntu Server 16.04.
+
+The demo website uses HTTPS only via a certificate generated inside Amazon Certificate Manager (ACM). Validations are done constantly throughout stack creation via automated tests run by CloudFormation as well as health checks implemented on the application load balancer.
 
 # Requirements:
 
