@@ -27,3 +27,4 @@ The demo website runs on HTTPS only (no HTTP) via a certificate generated inside
    
 # Instructions (AWS CLI)
 `aws cloudformation deploy --template-file cloudformation-template.yml --stack-name cloudformation-demo --parameter-overrides WebServerKeyName=myEC2keypair myDomain=example.com myHostedDomain=example.com. FQDN=foo.example.com`
+Absent third-party automation tools you will still need to go into the AWS GUI and approve the SSL certificate and Route 53 entry as shown in step 5 of the instructions above.
