@@ -137,7 +137,8 @@ Resources:
       SecurityGroups:
         - !Ref SecurityGroup
       IpAddressType: ipv4
-# 13) DNS alias record - HostedZoneID is different for every AWS Region! Check https://docs.aws.amazon.com/general/latest/gr/rande.html#elb_region for updates
+# 13) DNS alias record - HostedZoneID is different for every AWS Region! 
+# Check https://docs.aws.amazon.com/general/latest/gr/rande.html#elb_region to modify
   DNSalias:
     Type: 'AWS::Route53::RecordSetGroup'
     DependsOn: LoadBalancer
