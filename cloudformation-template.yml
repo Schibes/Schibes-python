@@ -1,0 +1,252 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+# AWS CloudFormation Infrastructure Demo. Be sure to read the README.md file before deploying!
+Description: 'CloudFormation Demo'
+# Parameters Section. WebServerKeyName is ONLY needed to access web servers via SSH and can be commented out otherwise
+Parameters:
+  WebServerKeyName:
+    Description: "The key pair to establish a SSH connection to the web servers."
+    Type: "AWS::EC2::KeyPair::KeyName"
+  myDomain: 
+    Description: "Domain of the website (like example.com) - Must be registered via AWS Route 53 to work with this template."
+    Type: String
+  myHostedDomain:
+    Description: "Domain of the website WITH TRAILING DOT (like example.com.) - Must be registered via AWS Route 53 to work with this template."
+    Type: String
+  FQDN:
+    Description: "Fully qualified domain name of the website (like www.example.com)" 
+    Type: String
+# Resources Section. This demo consists of 20 separate AWS resources built in CloudFormation.
+Resources:
+# 1) VPC
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 10.20.0.0/16
+      InstanceTenancy: default
+      EnableDnsHostnames: 'true'
+      EnableDnsSupport: 'true'
+      Tags:
+        - Key: Name
+          Value: CloudFormation Demo
+# 2) Internet Gateway
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: CloudFormation Demo
+# 3) Security Group - comment out the third CidrIp section under SecurityGroupIngress to disable SSH
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: CloudFormation-demo
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Demo SG
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+        - CidrIp: 0.0.0.0/0
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: '-1'  
+# 4) Internet Gateway attachment to VPC
+  VPCGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+# 5) Demo Subnet I
+  Subnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      AvailabilityZone: us-west-2c
+      CidrBlock: 10.20.30.0/24
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Demo Subnet I
+# 6) Demo Subnet II
+  Subnet2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      AvailabilityZone: us-west-2b
+      CidrBlock: 10.20.40.0/24
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Demo Subnet II  
+# 7) Route Table I
+  RouteTable1:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: PublicRT
+# 8) Route: 0.0.0.0/0 to Internet Gateway
+  IGWroute1:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref RouteTable1
+      GatewayId: !Ref InternetGateway
+    DependsOn: InternetGateway
+# 9) Associate Subnet I to Route Table I
+  RouteTableAssociationA:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref Subnet1
+      RouteTableId: !Ref RouteTable1
+# 10) Associate Subnet II to Route Table I
+  RouteTableAssociationA:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref Subnet2
+      RouteTableId: !Ref RouteTable1
+# 11) Certificate
+  SiteCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref FQDN
+      DomainValidationOptions:
+        - DomainName: !Ref FQDN
+          ValidationDomain: !Ref myDomain
+      ValidationMethod: DNS
+# 12) Application Load Balancer
+  LoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Subnets:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      Name: load-balancer
+      Type: application
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref SecurityGroup
+      IpAddressType: ipv4
+# 13) DNS alias record - HostedZoneID and DNSName are different for every AWS Region!
+  DNSalias:
+    Type: 'AWS::Route53::RecordSetGroup'
+    DependsOn: LoadBalancer
+    Properties:
+      HostedZoneName: !Ref myHostedDomain
+      RecordSets:
+        - Name: !Ref FQDN
+          Type: A
+          AliasTarget:
+            HostedZoneId: Z1H1FL5HABSF5
+            DNSName: !GetAtt LoadBalancer.DNSName
+# 14) Load Balancer Listener for Port 80
+  Listener80:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    DependsOn: LoadBalancer
+    Properties:
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: 443
+            Host: '#{host}'
+            Path: '/#{path}'
+            Query: '#{query}'
+            StatusCode: HTTP_301          
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: '80'
+      Protocol: HTTP
+# 15) Load Balancer Listener for Port 443
+  Listener443:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    DependsOn: LoadBalancer
+    Properties:
+      Certificates: 
+        - CertificateArn: !Ref SiteCertificate
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup         
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: '443'
+      Protocol: HTTPS
+# 16) Load Balancer Target Group
+  TargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    DependsOn: LoadBalancer
+    Properties:
+      HealthCheckIntervalSeconds: '10'
+      HealthCheckPath: /
+      Matcher:
+        HttpCode: "200-399"
+      Name: TG1
+      Port: '80'
+      Protocol: HTTP
+      UnhealthyThresholdCount: '10'
+      VpcId: !Ref VPC
+# 17) Launch Configuration
+  LaunchConfiguration:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      ImageId: 'ami-0b37e9efc396e4c38'
+      InstanceType: t2.micro
+      SecurityGroups:
+        - !Ref SecurityGroup
+      KeyName: {"Ref": "WebServerKeyName"}
+      AssociatePublicIpAddress: 'true'
+      UserData: !Base64
+        'Fn::Join':
+          - ''
+          -  [
+             "#!/bin/bash\n",
+             "apt install -y nginx\n",
+             "cd /var/www/html\n",
+             "rm index.nginx-debian.html\n",
+             "wget https://raw.githubusercontent.com/Schibes/Schibes-challenge/master/index.nginx-debian.html\n",
+             "systemctl enable nginx\n",
+             "systemctl restart nginx\n"
+          ]
+      InstanceMonitoring: 'false'
+# 18) Auto Scaling Group
+  AutoScalingGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      TargetGroupARNs:
+        - !Ref TargetGroup
+      LaunchConfigurationName: !Ref LaunchConfiguration
+      MinSize: '2'
+      MaxSize: '2'
+      DesiredCapacity: '2'
+      Cooldown: '300'
+      HealthCheckGracePeriod: '300'
+      HealthCheckType: ELB
+      VPCZoneIdentifier:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      Tags:
+        - PropagateAtLaunch: 'true'
+          Value: CloudFormation-demo
+          Key: Name
+# 19) DHCP Options
+  DHCPopt:
+    Type: 'AWS::EC2::DHCPOptions'
+    Properties:
+      DomainName: us-west-2.compute.internal
+      DomainNameServers:
+        - AmazonProvidedDNS
+# 20) DHCP Options Association
+  DHCPassoc:
+    Type: 'AWS::EC2::VPCDHCPOptionsAssociation'
+    Properties:
+      VpcId: !Ref VPC
+      DhcpOptionsId: !Ref DHCPopt
