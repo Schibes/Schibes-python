@@ -6,7 +6,7 @@ The demo website serves HTTPS only (no HTTP) via a certificate generated inside 
 
 # Requirements:
 
-1) A valid AWS account
+1) A valid AWS account with sufficient IAM permissions to create all required template resources
 2) An active, valid DNS domain in Route 53 owned by your AWS account
 3) *optional* An active, valid AWS EC2 key pair if you would like to be able to SSH into your EC2 instances after they are created.
 
