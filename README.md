@@ -11,6 +11,7 @@ The demo website runs on HTTPS only (no HTTP) via a certificate generated inside
 3) *optional* An active, valid AWS EC2 key pair if you would like to be able to SSH into your EC2 instances after they are created.
 
 # Instructions (AWS Web GUI):
+
 1) Download the cloudformation-template.yml YAML file
 2) Log into your AWS account and go to the US-West-2 (Oregon) region
 3) Go to AWS CloudFormation and deploy the template using the "Create Stack", "Template is Ready", and "Upload a Template File"  
@@ -26,5 +27,7 @@ The demo website runs on HTTPS only (no HTTP) via a certificate generated inside
    documentation at https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html
    
 # Instructions (AWS CLI)
+
 `aws cloudformation deploy --template-file cloudformation-template.yml --stack-name cloudformation-demo --parameter-overrides WebServerKeyName=myEC2keypair myDomain=example.com myHostedDomain=example.com. FQDN=foo.example.com`
+
 Absent third-party automation tools you will still need to go into the AWS GUI and approve the SSL certificate and Route 53 entry as shown in step 5 of the instructions above.
