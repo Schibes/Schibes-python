@@ -14,8 +14,7 @@ The demo website runs on HTTPS only (no HTTP) via a certificate generated inside
 
 1) Download the cloudformation-template.yml YAML file
 2) Log into your AWS account and go to the US-West-2 (Oregon) region
-3) Go to AWS CloudFormation and deploy the template using the "Create Stack", "Template is Ready", and "Upload a Template File"  
-   options
+3) Go to AWS CloudFormation and deploy the template using the following options: "Create Stack", "Template is Ready", and "Upload a Template File" 
 4) Enter a name for the stack to be built with the template and populate the parameters as follows:
    * FQDN will be your full website name, like __foo.example.com__
    * WebServerKeyName will be your AWS EC2 key pair used to SSH into the web servers (this is optional, comment it out in YAML 
