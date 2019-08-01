@@ -23,7 +23,7 @@ def is_good_cc_length(my_cc):
     else:
       return False
 
-#Function that checks if the credit card number does not exceed the maximum of allowed repeating digits (3)
+#Function that checks if the credit card number does not exceed the maximum allowed repeating digits (3)
 def is_good_nonrepeating_digits(my_cc):
   repeat_pattern = r'(\d)\1{3}'
   my_cc_digits = re.sub('[^0-9]','', my_cc)
