@@ -11,7 +11,7 @@ def is_good_start_digit(my_cc):
   else:
     return False
 
-#Function that checks is the credit card number is the correct length, allowing for dashes
+#Function that checks if the credit card number is the correct length, allowing for dashes
 def is_good_cc_length(my_cc):
   alldigits_pattern = r'\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d'
   dash_pattern = r'\d\d\d\d-\d\d\d\d-\d\d\d\d-\d\d\d\d'
