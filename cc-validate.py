@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+#Demo Python code for local meetup
+
 #Imports the Python regular expression module
 import re
 
